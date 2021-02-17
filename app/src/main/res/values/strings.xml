@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Lab1</string>
-    <string name="title_home">Tab 1</string>
-    <string name="title_dashboard">Tab 2</string>
+    <string name="title_home">Student</string>
+    <string name="title_dashboard">Graph</string>
 </resources>
