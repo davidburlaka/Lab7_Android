@@ -11,4 +11,9 @@
         android:icon="@android:drawable/btn_star_big_off"
         android:title="@string/title_dashboard" />
 
+    <item
+        android:id="@+id/navigation_movies"
+        android:icon="@android:drawable/btn_star_big_off"
+        android:title="@string/title_movies" />
+
 </menu>

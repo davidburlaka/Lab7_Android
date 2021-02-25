@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:visibility="visible"
-    tools:context=".ui.dashboard.DashboardFragment">
+    tools:context=".ui_fragments.dashboard.DashboardFragment">
 
     <Switch
         android:id="@+id/switch1"
@@ -23,7 +23,7 @@
 
     <fragment
         android:id="@+id/pie"
-        android:name="com.example.lab1.ui.piechart.PiechartFragment"
+        android:name="com.example.lab1.ui_fragments.piechart.PiechartFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@+id/switch1"
@@ -33,7 +33,7 @@
 
     <fragment
         android:id="@+id/line"
-        android:name="com.example.lab1.ui.linegraph.LineGraphFragment"
+        android:name="com.example.lab1.ui_fragments.linegraph.LineGraphFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:visibility="invisible"

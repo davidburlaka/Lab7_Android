@@ -1,4 +1,4 @@
-package com.example.lab1.ui.piechart;
+package com.example.lab1.ui_fragments.piechart;
 
 import android.graphics.Color;
 import android.os.Bundle;

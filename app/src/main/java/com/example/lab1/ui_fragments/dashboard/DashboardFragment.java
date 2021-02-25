@@ -1,4 +1,4 @@
-package com.example.lab1.ui.dashboard;
+package com.example.lab1.ui_fragments.dashboard;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;

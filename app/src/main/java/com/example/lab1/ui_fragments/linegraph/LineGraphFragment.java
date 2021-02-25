@@ -1,4 +1,4 @@
-package com.example.lab1.ui.linegraph;
+package com.example.lab1.ui_fragments.linegraph;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
