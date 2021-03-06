@@ -25,4 +25,14 @@ public class MovieItem {
     public String getPoster() {
         return Poster;
     }
+
+    public String getImdbID() { return imdbID; }
+
+    public String toString() {
+        return "{\"Title\":\"" + Title + "\"," +
+                "\"Year\":\"" + Year + "\"," +
+                "\"imdbID\": \""+ imdbID + "\"," +
+                "\"Type\":\"" + Type + "\"," +
+                "\"Poster\":\"" + Poster + "\"}";
+    }
 }
