@@ -23,4 +23,10 @@
         android:label="@string/title_movies"
         tools:layout="@layout/fragment_movies_list" />
 
+    <fragment
+        android:id="@+id/navigation_pics"
+        android:name="com.example.lab1.ui_fragments.pics.PicsFragment"
+        android:label="@string/title_pics"
+        tools:layout="@layout/fragment_pics" />
+
 </navigation>

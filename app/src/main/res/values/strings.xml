@@ -4,7 +4,9 @@
     <string name="title_home">Student</string>
     <string name="title_dashboard">Graph</string>
     <string name="title_movies">Movies</string>
+    <string name="title_pics">Pictures</string>
     <string name="search_bar">Search</string>
     <string name="add_item">Add Movie</string>
     <string name="nothing_found">No Movie Found</string>
+    <string name="add_pic_button">Add Picture</string>
 </resources>
