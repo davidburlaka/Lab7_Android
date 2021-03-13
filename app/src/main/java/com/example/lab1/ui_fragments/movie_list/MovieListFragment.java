@@ -2,7 +2,11 @@ package com.example.lab1.ui_fragments.movie_list;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
+
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,9 +31,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.lab1.model.SearchItem;
+import com.example.lab1.threads.MoviesBGThread;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -37,7 +46,9 @@ public class MovieListFragment extends Fragment {
     private String TAG = "MovieList";
     private static final String MOVIE = "movie";
     private static final String RESULT = "result";
+    private static String moviesJSON = "";
     ArrayList<MovieItem> movies = new ArrayList<>();
+    SearchItem searchItem = new SearchItem();
     ArrayList<MovieItem> searchedList = new ArrayList<>();
     ListView list;
     MoviesListAdapter adapter;
@@ -51,31 +62,7 @@ public class MovieListFragment extends Fragment {
 
         TextView nothingFound = root.findViewById(R.id.nothingFound);
         nothingFound.setVisibility(View.INVISIBLE);
-
-        Gson gson = new Gson();
-        Type listOfMoviesItemsType = new TypeToken<ArrayList<MovieItem>>() {}.getType();
-
-        try {
-            movies = gson.fromJson(ReadTextFile(fileName), listOfMoviesItemsType);
-            Log.i(TAG, ReadTextFile(fileName));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        searchedList = movies;
-        updateResourseId(searchedList);
-
         list = root.findViewById(R.id.MoviesListView);
-        adapter = new MoviesListAdapter(this, searchedList, textViewResourceId);
-        list.setAdapter(adapter);
-
-        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Object listItem = list.getItemAtPosition(position);
-                openDisplayMovieActivity(id);
-            }
-        });
-
         SearchView searchView = root.findViewById(R.id.searchView2);
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -86,15 +73,20 @@ public class MovieListFragment extends Fragment {
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                searchedList =  filter(newText);
-                if (newText.equals(""))
-                    searchedList = movies;
-                if (searchedList.size() > 0)
+                if (adapter != null)
+                    adapter.clear();
+                Log.i(TAG, String.valueOf(searchedList.size()));
+                if (newText.length() >= 3){
                     nothingFound.setVisibility(View.INVISIBLE);
+                    try {
+                        fillList(newText);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        nothingFound.setVisibility(View.VISIBLE);
+                    }
+                }
                 else
                     nothingFound.setVisibility(View.VISIBLE);
-                Log.i(TAG, String.valueOf(searchedList.size()));
-                refresh();
                 return false;
             }
         });
@@ -114,6 +106,32 @@ public class MovieListFragment extends Fragment {
         return root;
     }
 
+    private void fillList(String search) throws InterruptedException {
+        Gson gson = new Gson();
+        Type listOfMoviesItemsType = new TypeToken<SearchItem>() {}.getType();
+        MoviesBGThread g = new MoviesBGThread(search);
+        Thread t = new Thread(g, "Background Thread");
+        t.start();//we start the thread
+        t.join();
+        System.out.println(moviesJSON);
+        if (moviesJSON.contains("\"Response\":\"False\""))
+            throw new InterruptedException();
+        searchItem = gson.fromJson(moviesJSON, listOfMoviesItemsType);
+        searchedList = searchItem.getMovies();
+        updateResourseId(searchedList);
+
+        adapter = new MoviesListAdapter(this, searchedList, textViewResourceId);
+        list.setAdapter(adapter);
+
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Object listItem = list.getItemAtPosition(position);
+                openDisplayMovieActivity(id);
+            }
+        });
+    }
+
     public void refresh() {
         updateResourseId(searchedList);
         adapter = new MoviesListAdapter(this, searchedList, textViewResourceId);
@@ -122,7 +140,7 @@ public class MovieListFragment extends Fragment {
 
     public void openDisplayMovieActivity(long id) {
         Intent intent = new Intent(this.getActivity(), DisplayMovieActivity.class);
-        intent.putExtra(MOVIE, movies.get((int) (id)).getImdbID());
+        intent.putExtra(MOVIE, searchItem.getMovies().get((int) (id)).getImdbID());
         startActivity(intent);
     }
 
@@ -198,18 +216,19 @@ public class MovieListFragment extends Fragment {
 
     private String moviesToString() {
         StringBuilder result = new StringBuilder("[ ");
-        for (int i = 0; i < movies.size(); i++) {
-            if (i < movies.size() - 1) {
-                result.append(movies.get(i).toString());
+        for (int i = 0; i < searchItem.getMovies().size(); i++) {
+            if (i < searchItem.getMovies().size() - 1) {
+                result.append(searchItem.getMovies().get(i).toString());
                 result.append(", ");
             }
-            else result.append(movies.get(i).toString());
+            else result.append(searchItem.getMovies().get(i).toString());
 
         }
         return result.append(" ]").toString();
     }
 
-    private void deleteItem (String movieTitle) {
-
+    public static void getUrlResponse(String search) throws IOException {
+        moviesJSON = search;
     }
+
 }

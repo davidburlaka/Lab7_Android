@@ -21,12 +21,22 @@ import com.bumptech.glide.request.transition.Transition;
 import com.example.lab1.R;
 import com.example.lab1.adapters.PicsAdapter;
 import com.example.lab1.model.PicItem;
+import com.example.lab1.model.PicItemJson;
+import com.example.lab1.model.PicSearchJson;
+import com.example.lab1.model.SearchItem;
+import com.example.lab1.threads.DisplayMovieBGThread;
+import com.example.lab1.threads.DisplayPicsBGThread;
+import com.example.lab1.threads.MoviesBGThread;
 import com.felipecsl.asymmetricgridview.library.Utils;
 import com.felipecsl.asymmetricgridview.library.widget.AsymmetricGridView;
 import com.felipecsl.asymmetricgridview.library.widget.AsymmetricGridViewAdapter;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +46,8 @@ public class PicsFragment extends Fragment {
     private ListAdapter adapter;
     private AsymmetricGridView listView;
     final List<PicItem> items = new ArrayList<>();
+    private static String picsJSON = "";
+
     private int index = 0;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -44,6 +56,25 @@ public class PicsFragment extends Fragment {
 
         listView = root.findViewById(R.id.picsList);
         Button addButton = root.findViewById(R.id.addPicButton);
+
+        Gson gson = new Gson();
+        Type listOfMoviesItemsType = new TypeToken<PicSearchJson>() {}.getType();
+        DisplayPicsBGThread g = new DisplayPicsBGThread();
+        Thread t = new Thread(g, "Background Thread");
+        t.start();//we start the thread
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        PicSearchJson searchItem = gson.fromJson(picsJSON, listOfMoviesItemsType);
+        ArrayList<Integer> Span = new ArrayList<>();
+        fillSpan(Span);
+        for (PicItemJson pic : searchItem.getPics()) {
+            items.add(new PicItem(Span.get(index % 9), Span.get(index % 9), 0, pic.getImage(), null, null));
+            index++;
+            refresh();
+        }
 
         addButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -54,7 +85,7 @@ public class PicsFragment extends Fragment {
         });
 
 
-        listView.setRequestedColumnWidth(Utils.dpToPx(this.getContext(), 120));
+        listView.setRequestedColumnWidth(Utils.dpToPx(this.getContext(), 124));
         adapter = new PicsAdapter(getContext(), items);
         listView.setAdapter(new AsymmetricGridViewAdapter(getContext(), listView, adapter));
 
@@ -73,7 +104,7 @@ public class PicsFragment extends Fragment {
 
                 ArrayList<Integer> Span = new ArrayList<>();
                 fillSpan(Span);
-                items.add(new PicItem(Span.get(index % 9), Span.get(index % 9), 0, selectedImage, imageUri));
+                items.add(new PicItem(Span.get(index % 9), Span.get(index % 9), 0, null, selectedImage, imageUri));
                 index++;
                 refresh();
             } catch (FileNotFoundException e) {
@@ -94,5 +125,9 @@ public class PicsFragment extends Fragment {
         listView.setRequestedColumnWidth(Utils.dpToPx(this.getContext(), 120));
         adapter = new PicsAdapter(getContext(), items);
         listView.setAdapter(new AsymmetricGridViewAdapter(getContext(), listView, adapter));
+    }
+
+    public static void getUrlResponse(String search) throws IOException {
+        picsJSON = search;
     }
 }

@@ -17,16 +17,18 @@ public class PicItem implements AsymmetricItem {
     private int columnSpan;
     private int rowSpan;
     private int position;
+    private String imageUrl;
     private Bitmap image;
     private Uri uri;
     public PicItem() {
-        this(1, 1, 0, null, null);
+        this(1, 1, 0,"", null, null);
     }
 
-    public PicItem(int columnSpan, int rowSpan, int position,Bitmap image, Uri uri) {
+    public PicItem(int columnSpan, int rowSpan, int position, String imageUrl, Bitmap image, Uri uri) {
         this.columnSpan = columnSpan;
         this.rowSpan = rowSpan;
         this.position = position;
+        this.imageUrl=imageUrl;
         this.image=image;
         this.uri=uri;
     }
@@ -49,6 +51,10 @@ public class PicItem implements AsymmetricItem {
 
     public Uri getUri() {
         return uri;
+    }
+
+    public String getUrl() {
+        return imageUrl;
     }
 
     public int getPosition() {

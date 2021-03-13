@@ -15,6 +15,7 @@ import android.widget.TextView;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
+import com.bumptech.glide.Glide;
 import com.example.lab1.R;
 import com.example.lab1.model.MovieItem;
 
@@ -46,14 +47,7 @@ public class MoviesListAdapter extends ArrayAdapter<String> {
         TextView yearText = (TextView) rowView.findViewById(R.id.year);
         TextView typeText = (TextView) rowView.findViewById(R.id.type);
 
-
-        int drawableResourceId = this.getContext().getResources().getIdentifier(
-                movies.get(position).getPoster().toLowerCase().replace(".jpg", ""),
-                "drawable", this.getContext().getPackageName());
-        if (drawableResourceId == 0)
-            image.setImageResource(R.drawable.no_poster);
-        else
-            image.setImageResource(drawableResourceId);
+        Glide.with(this.context).load(movies.get(position).getPoster()).into(image);
 
         titleText.setText(movies.get(position).getTitle());
         yearText.setText(movies.get(position).getYear());
@@ -74,7 +68,6 @@ public class MoviesListAdapter extends ArrayAdapter<String> {
     };
 
     private void deleteItem(int position) {
-
         movies.remove(position);
         notifyDataSetChanged();
     }

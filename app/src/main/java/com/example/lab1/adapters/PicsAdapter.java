@@ -9,6 +9,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
@@ -35,7 +37,19 @@ public class PicsAdapter extends ArrayAdapter<PicItem> {
         PicItem item = getItem(position);
         View v = layoutInflater.inflate( R.layout.pics_item, parent, false);
         ImageView image = v.findViewById(R.id.galleryImage);
-        Glide.with(getContext()).load(item.getUri()).into(image);
+        System.out.println(item.getUrl());
+
+        CircularProgressDrawable circularProgressDrawable = new CircularProgressDrawable(getContext());
+        circularProgressDrawable.setStyle(CircularProgressDrawable.DEFAULT);
+
+        if (item.getUrl() != null) {
+            Glide.with(getContext()).
+                    load(item.getUrl()).
+                    placeholder(circularProgressDrawable).
+                    into(image);
+            circularProgressDrawable.start();
+        }
+        else Glide.with(getContext()).load(item.getUri()).into(image);
         return v;
     }
 
