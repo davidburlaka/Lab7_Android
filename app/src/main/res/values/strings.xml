@@ -8,5 +8,6 @@
     <string name="search_bar">Search</string>
     <string name="add_item">Add Movie</string>
     <string name="nothing_found">No Movie Found</string>
+    <string name="no_internet">(No Internet Connection)</string>
     <string name="add_pic_button">Add Picture</string>
 </resources>

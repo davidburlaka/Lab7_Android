@@ -15,18 +15,15 @@ import android.widget.ListAdapter;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.SimpleTarget;
-import com.bumptech.glide.request.transition.Transition;
+import com.example.lab1.MainActivity;
 import com.example.lab1.R;
 import com.example.lab1.adapters.PicsAdapter;
 import com.example.lab1.model.PicItem;
 import com.example.lab1.model.PicItemJson;
 import com.example.lab1.model.PicSearchJson;
-import com.example.lab1.model.SearchItem;
-import com.example.lab1.threads.DisplayMovieBGThread;
+
 import com.example.lab1.threads.DisplayPicsBGThread;
-import com.example.lab1.threads.MoviesBGThread;
+
 import com.felipecsl.asymmetricgridview.library.Utils;
 import com.felipecsl.asymmetricgridview.library.widget.AsymmetricGridView;
 import com.felipecsl.asymmetricgridview.library.widget.AsymmetricGridViewAdapter;
@@ -46,7 +43,7 @@ public class PicsFragment extends Fragment {
     private ListAdapter adapter;
     private AsymmetricGridView listView;
     final List<PicItem> items = new ArrayList<>();
-    private static String picsJSON = "";
+
 
     private int index = 0;
 
@@ -67,13 +64,16 @@ public class PicsFragment extends Fragment {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        PicSearchJson searchItem = gson.fromJson(picsJSON, listOfMoviesItemsType);
+        PicSearchJson searchItem = gson.fromJson(MainActivity.picsJSON, listOfMoviesItemsType);
         ArrayList<Integer> Span = new ArrayList<>();
         fillSpan(Span);
-        for (PicItemJson pic : searchItem.getPics()) {
-            items.add(new PicItem(Span.get(index % 9), Span.get(index % 9), 0, pic.getImage(), null, null));
-            index++;
-            refresh();
+        if (searchItem != null) {
+            for (PicItemJson pic : searchItem.getPics()) {
+                System.out.println(pic);
+                items.add(new PicItem(Span.get(index % 9), Span.get(index % 9), 0, pic.getImage(), null, null));
+                index++;
+                refresh();
+            }
         }
 
         addButton.setOnClickListener(new View.OnClickListener() {
@@ -128,6 +128,8 @@ public class PicsFragment extends Fragment {
     }
 
     public static void getUrlResponse(String search) throws IOException {
-        picsJSON = search;
+        if (search != null && !search.equals(""))
+            MainActivity.picsJSON = search;
+        System.out.println("Pic Json: " + MainActivity.picsJSON);
     }
 }

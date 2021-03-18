@@ -1,7 +1,10 @@
 package com.example.lab1.ui_fragments.movie_list;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
@@ -19,11 +22,15 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.room.Room;
 
 import com.example.lab1.R;
 import com.example.lab1.activities.AddMovieActivity;
 import com.example.lab1.activities.DisplayMovieActivity;
 import com.example.lab1.adapters.MoviesListAdapter;
+import com.example.lab1.dao.MoviesDao;
+import com.example.lab1.database.MoviesDatabase;
+import com.example.lab1.model.MovieEntity;
 import com.example.lab1.model.MovieItem;
 
 import java.io.BufferedReader;
@@ -35,6 +42,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.example.lab1.model.SearchItem;
@@ -42,12 +50,16 @@ import com.example.lab1.threads.MoviesBGThread;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import org.w3c.dom.Text;
+
 public class MovieListFragment extends Fragment {
     private String TAG = "MovieList";
     private static final String MOVIE = "movie";
     private static final String RESULT = "result";
     private static String moviesJSON = "";
+
     ArrayList<MovieItem> movies = new ArrayList<>();
+    ArrayList<MovieEntity> moviesEntity = new ArrayList<>();
     SearchItem searchItem = new SearchItem();
     ArrayList<MovieItem> searchedList = new ArrayList<>();
     ListView list;
@@ -57,11 +69,10 @@ public class MovieListFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_movies_list, container, false);
-
-        String fileName = "MoviesList.json";
-
         TextView nothingFound = root.findViewById(R.id.nothingFound);
+        TextView noInternet = root.findViewById(R.id.noInternetText);
         nothingFound.setVisibility(View.INVISIBLE);
+        noInternet.setVisibility(View.INVISIBLE);
         list = root.findViewById(R.id.MoviesListView);
         SearchView searchView = root.findViewById(R.id.searchView2);
 
@@ -78,9 +89,15 @@ public class MovieListFragment extends Fragment {
                 Log.i(TAG, String.valueOf(searchedList.size()));
                 if (newText.length() >= 3){
                     nothingFound.setVisibility(View.INVISIBLE);
+                    noInternet.setVisibility(View.INVISIBLE);
                     try {
-                        fillList(newText);
-                    } catch (InterruptedException e) {
+                        if (isNetworkAvailable()) {
+                            fillListFromInternet(newText);
+                        } else {
+                            fillFromDatabase(newText, noInternet);
+                        }
+                    }
+                    catch (InterruptedException e){
                         e.printStackTrace();
                         nothingFound.setVisibility(View.VISIBLE);
                     }
@@ -93,32 +110,45 @@ public class MovieListFragment extends Fragment {
 
         Button addItemButton = (Button) root.findViewById(R.id.addItem);
 
-        addItemButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                try {
-                    openAddMovieActivity();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        addItemButton.setOnClickListener(v -> {
+            try {
+                openAddMovieActivity();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         });
 
         return root;
     }
 
-    private void fillList(String search) throws InterruptedException {
+    private void fillListFromInternet(String search) throws InterruptedException {
         Gson gson = new Gson();
+        MoviesDatabase db = MoviesDatabase.getDbInstance(getContext());
         Type listOfMoviesItemsType = new TypeToken<SearchItem>() {}.getType();
         MoviesBGThread g = new MoviesBGThread(search);
         Thread t = new Thread(g, "Background Thread");
         t.start();//we start the thread
         t.join();
         System.out.println(moviesJSON);
+        try {
+            System.out.println("Query: " + db.moviesDao().findBySearch(search).toString());
+        } catch (NullPointerException e){
+            e.printStackTrace();
+        }
+
         if (moviesJSON.contains("\"Response\":\"False\""))
             throw new InterruptedException();
         searchItem = gson.fromJson(moviesJSON, listOfMoviesItemsType);
         searchedList = searchItem.getMovies();
         updateResourseId(searchedList);
+
+        //adding to db missing searches
+        if (db.moviesDao() != null && db.moviesDao().findBySearch(search) == null){
+            for (MovieItem movie : searchedList) {
+                System.out.println(movie.toEntity(search));
+                db.moviesDao().insertAll(movie.toEntity(search));
+            }
+        }
 
         adapter = new MoviesListAdapter(this, searchedList, textViewResourceId);
         list.setAdapter(adapter);
@@ -132,6 +162,31 @@ public class MovieListFragment extends Fragment {
         });
     }
 
+    public void fillFromDatabase(String search, TextView tv) throws InterruptedException{
+        System.out.println("Connection is not available");
+        MoviesDatabase db = MoviesDatabase.getDbInstance(getContext());
+        if (db.moviesDao().findBySearch(search) != null) {
+            moviesEntity = new ArrayList<MovieEntity>(db.moviesDao().getAllBySearch(search));
+            searchedList.clear();
+            for (MovieEntity entity : moviesEntity) {
+                searchedList.add(entity.toItem());
+                System.out.println("Converting to item: "+entity.toItem().toString());
+            }
+            System.out.println("Converted to item: "+searchedList);
+            adapter = new MoviesListAdapter(this, searchedList, textViewResourceId);
+            list.setAdapter(adapter);
+            updateResourseId(searchedList);
+            list.setOnItemClickListener((parent, view, position, id) -> {
+                Object listItem = list.getItemAtPosition(position);
+                openDisplayMovieActivity(id);
+            });
+        }
+        else {
+            tv.setVisibility(View.VISIBLE);
+            throw new InterruptedException();
+        }
+    }
+
     public void refresh() {
         updateResourseId(searchedList);
         adapter = new MoviesListAdapter(this, searchedList, textViewResourceId);
@@ -142,43 +197,6 @@ public class MovieListFragment extends Fragment {
         Intent intent = new Intent(this.getActivity(), DisplayMovieActivity.class);
         intent.putExtra(MOVIE, searchItem.getMovies().get((int) (id)).getImdbID());
         startActivity(intent);
-    }
-
-    public String ReadTextFile(String name) throws IOException {
-        StringBuilder string = new StringBuilder();
-        String line = "";
-        try {
-        InputStream is = getContext().getAssets().open(name);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        while (true) {
-            try {
-                if ((line = reader.readLine()) == null) break;
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-            string.append(line);
-        }
-        is.close();
-
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return string.toString();
-    }
-
-    public ArrayList<MovieItem> filter(String searchText) {
-        ArrayList<MovieItem> newList = new ArrayList<>();
-
-        for (MovieItem movie : movies) {
-            if (movie.getTitle().contains(searchText) ||
-                movie.getYear().contains(searchText) ||
-                movie.getType().contains(searchText))
-                newList.add(movie);
-        }
-
-        return newList;
     }
 
     private void updateResourseId (ArrayList<MovieItem> list) {
@@ -231,4 +249,10 @@ public class MovieListFragment extends Fragment {
         moviesJSON = search;
     }
 
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
 }

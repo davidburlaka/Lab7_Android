@@ -20,7 +20,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
 public class AddMovieActivity extends Activity {
-    private static final String fileName = "MoviesList.json";
     private static final String MOVIE = "movie";
     private static final String RESULT = "result";
     @Override
