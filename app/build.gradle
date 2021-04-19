@@ -7,7 +7,7 @@ android {
     buildToolsVersion "30.0.2"
 
     defaultConfig {
-        applicationId "com.example.lab1"
+        applicationId "ua.kpi.comsys.io8304"
         minSdkVersion 26
         targetSdkVersion 30
         versionCode 1
